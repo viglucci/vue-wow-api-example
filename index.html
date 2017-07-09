@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>3v3 Leadboards Example</title>
+
+        <!-- Reset viewport so our page is pretty on mobile phones. -->
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+        <!-- 
+            Load bootstrap css so that our page looks good
+            
+            Documentation: http://getbootstrap.com/
+        -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+        <!-- Load jquery javascript -->
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+        <!-- Load bootstrap javascript -->
+        <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <!-- 
+            Load Vue javascript
+            
+            Introduction to Vue: https://vuejs.org/v2/guide/index.html
+        -->
+        <script type="text/javascript" src="https://unpkg.com/vue"></script>
+
+        <!-- Save api key from dev.battle.net to a variable for later use. -->
+        <script type="text/javascript" id="app-config">
+            var API_KEY = "<YOUR_API_KEY>";
+        </script>
+    </head>
+    <body>
+
+        <!-- START HTML -->
+        <div id="main">
+
+            <!-- container is a class that will center the contents on the page -->
+            <div class="container">
+
+                <!--
+                    Using a Vue 'directive' we will render a table that contains all of the leaderboard rows we retrieved from the API.
+                    The variables 'rows' and 'error' are defined in the 'data' object below in the initalizeVueApp function.
+
+                    Documentation: https://vuejs.org/v2/guide/conditional.html
+                -->
+                <div v-if="rows.length > 0 && error == null">
+                    <h3>{{ title }}</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                            <th>Ranking</th>
+                            <th>Name</th>
+                            <th>ClassID</th>
+                            <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in rows">
+                                <td>{{ row.ranking }}</td>
+                                <td>{{ row.name }}</td>
+                                <td>{{ row.classId }}</td>
+                                <td>{{ row.rating }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!--
+                    Using the v-else Vue 'directive' we will render a 1 of 2 alerts when there are no rows in our data object.
+
+                    Documentation: https://vuejs.org/v2/guide/conditional.html
+                -->
+                <div v-else>
+
+                    <!--
+                        If we have an error we will render a alert displaying the error. You can simulate an error by setting
+                        your API_KEY above in the app-config script to a empty string.
+                    -->
+                    <div v-if="error != null" class="alert alert-danger">
+                        Blizzard API Error:
+                        <span>{{ error.code }}</span>
+                        <span v-if="error.reason">
+                            {{ error.reason }}
+                        </span>
+                        <span v-else>
+                            {{ error.detail }}
+                        </span>
+                    </div>
+
+                    <!--
+                        If we do not have an error we will render a alert saying that we are loading data.
+                    -->
+                    <div v-if="error == null" class="alert alert-info">Loading data...</div>
+                </div>
+            </div>
+        </div>
+        <!-- END HTML -->
+
+        <!-- START SCRIPTS -->
+        <script id="vue-app">
+            function initializeVueApp () {
+                new Vue({
+                    el: "#main",
+                    data: {
+                        title: "3v3 Leaderboards",
+                        rows: [],
+                        error: null,
+                    },
+                    /* 
+                        The mounted function will execute when the Vue app has finished loading.
+
+                        Documentation: https://vuejs.org/v2/api/#mounted
+                    */
+                    mounted: function () {
+
+                        /*
+                            The 'this' variable represents the data in the initliazed Vue application. Because we wish to access this variable inside of the
+                            callbacks below, we will save it to the 'appData' variable.
+
+                            Anytime the data for the Vue application changes, the Vue framework uses a concept call 'data-binding' to re-render the page with
+                            the new data.
+                        */
+                        var appData = this;
+                        
+                        /*
+                            Make an ajax call using jQuery..
+
+                            jQuery is also saved in the page to the variable, but we access the jQuery
+                            variable here to reduce confusion.
+                        */
+                        jQuery.ajax({
+                            url: "https://us.api.battle.net/wow/leaderboard/3v3?locale=en_US&apikey=" + API_KEY,
+                            method: "GET",
+
+                            /*
+                                Success callback.
+                            */
+                            success: function (data) {
+                                /*
+                                    Because Vue supports data-binding, anytime we change the appData object,
+                                    the page will re-render with the new data automatically.
+                                */
+                                appData.rows = data.rows;
+                            },
+
+                            /*
+                                Error callback.
+                            */
+                            error: function (error) {
+                                console.log(error);
+                                appData.error = error.responseJSON;
+                            }
+                        });
+                    }
+                });
+            }
+        </script>
+        <script id="initialize-app">
+            /* 
+                This code will wait for the page to finish loading before it invokes the onReady callback.
+                When the onReady callback is invoked, it will invoke the initializeVueApp function, which is defined above and
+                will 'bind' the Vue javascript framework to the html element with id='main'.
+
+                Documentation: https://learn.jquery.com/using-jquery-core/document-ready/
+            */
+            function onReady () {
+                initializeVueApp();
+            }
+            $(document).ready(onReady);
+        </script>
+        <!-- END SCRIPTS -->
+    </body>
+</html>
